@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\AplicationController;
-
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,5 +22,7 @@ Route::get('/', function () {
 // Route::get('/admin/dashboard', function () {
 //     return view('dashboard');
 // });
+
+Route::get('/api/users', [UserController::class, 'index']);
 
 Route::get('{view}', AplicationController::class)->where('view', '(.*)');
