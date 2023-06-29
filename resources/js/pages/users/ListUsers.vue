@@ -6,34 +6,77 @@ import { Form, Field } from 'vee-validate';
 import * as yup from 'yup';
 
 const users = ref([]);
+const editing = ref(false);
+const formValues = ref();
+const form = ref(null);
 
-const form = reactive({
-    name: '',
-    email: '',
-    password: ''
-})
-
-const schema = yup.object({
+const CreateUserSchema = yup.object({
     name: yup.string().required(),
     email: yup.string().email().required(),
     password: yup.string().required().min(8)
+})
+
+const EditUserSchema = yup.object({
+    name: yup.string().required(),
+    email: yup.string().email().required(),
+    password: yup.string().when((password, schema) => {
+        return password[0] ? schema.required().min(8) : schema;
+    })
 })
 
 const GetUsers = () => {
     axios.get('/api/users')
         .then((response) => {
             users.value = response.data;
-            console.log(response.data);
         })
 }
 
-const CreateUser = (values, { resetForm}) => {
+const AddUser = () => {
+    editing.value = false;
+    $('#userFormModal').modal('show');
+}
+
+const EditUser = (user) => {
+    editing.value = true;
+    form.value.resetForm();
+    formValues.value = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+    };
+    $('#userFormModal').modal('show');
+}
+
+const CreateUser = (values) => {
     axios.post('/api/users', values)
         .then((response) => {
             users.value.push(response.data);
-            $('#createUserModal').modal('hide');
-            resetForm();
+            $('#userFormModal').modal('hide');
+            form.value.resetForm();
         })
+}
+
+const UpdateUser = (values) => {
+    axios.put('/api/users/' + formValues.value.id, values)
+        .then((response) => {
+            const index = users.value.findIndex(user => user.id == response.data.id);
+            users.value[index] = response.data;
+            $('#userFormModal').modal('hide');
+        })
+        .catch((error) => {
+            console.log(error);
+        })
+        .finally(() => {
+            form.value.resetForm();
+        });
+}
+
+const handlerSubmit = (values) => {
+    if (editing.value) {
+        UpdateUser(values);
+    } else {
+        CreateUser(values);
+    }
 }
 
 onMounted(() => {
@@ -61,7 +104,7 @@ onMounted(() => {
 
     <div class="content">
         <div class="container-fluid">
-            <button type="button" class="mb-2 btn btn-primary" data-toggle='modal' data-target="#createUserModal">
+            <button @click.prevent="AddUser()" type="button" class="mb-2 btn btn-primary">
                 Add New User
             </button>
             <div class="card">
@@ -84,7 +127,9 @@ onMounted(() => {
                                 <td>{{ user.email }}</td>
                                 <td>{{ user.created_at }}</td>
                                 <td>-</td>
-                                <td>-</td>
+                                <td>
+                                    <a href="#" @click.prevent="EditUser(user)"><i class="fa fa-edit"></i></a>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -93,36 +138,41 @@ onMounted(() => {
 
         </div>
     </div>
-    <div class="modal fade" id="createUserModal" data-backdrop="static" tabindex="-1" role="dialog"
+    <div class="modal fade" id="userFormModal" data-backdrop="static" tabindex="-1" role="dialog"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="staticBackdropLabel">Add New User</h5>
+                    <h5 class="modal-title" id="staticBackdropLabel">
+                        <span v-if="editing">Edit User</span>
+                        <span v-else>Add New User</span>
+                    </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <Form @submit="CreateUser" :validation-schema="schema" v-slot="{ errors }">
+                <Form ref="form" @submit="handlerSubmit" :validation-schema="editing ? EditUserSchema : CreateUserSchema"
+                    v-slot="{ errors }" :initial-values="formValues">
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="name">Name</label>
-                            <Field name="name" type="text" class="form-control" :class="{'is-invalid': errors.name }" id="name"
-                                aria-describedby="nameHelp" placeholder="Enter full name" />
+                            <Field name="name" type="text" class="form-control" :class="{ 'is-invalid': errors.name }"
+                                id="name" aria-describedby="nameHelp" placeholder="Enter full name" />
                             <span class="invalid-feedback">{{ errors.name }}</span>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <Field name="email" type="email" class="form-control" :class="{'is-invalid': errors.email }" id="email"
-                                aria-describedby="nameHelp" placeholder="Enter full name" />
+                            <Field name="email" type="email" class="form-control" :class="{ 'is-invalid': errors.email }"
+                                id="email" aria-describedby="nameHelp" placeholder="Enter full name" />
                             <span class="invalid-feedback">{{ errors.email }}</span>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Password</label>
-                            <Field name="password" type="password" class="form-control" :class="{'is-invalid': errors.password }" id="password"
-                                aria-describedby="nameHelp" placeholder="Enter password" />
+                            <Field name="password" type="password" class="form-control"
+                                :class="{ 'is-invalid': errors.password }" id="password" aria-describedby="nameHelp"
+                                placeholder="Enter password" />
                             <span class="invalid-feedback">{{ errors.password }}</span>
                         </div>
                     </div>
