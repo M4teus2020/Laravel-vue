@@ -4,7 +4,9 @@ import { reactive, ref, onMounted } from 'vue';
 import axios from 'axios';
 import { Form, Field } from 'vee-validate';
 import * as yup from 'yup';
+import { UseToastr } from '../../toastr.js';
 
+const toastr = UseToastr();
 const users = ref([]);
 const editing = ref(false);
 const formValues = ref();
@@ -53,7 +55,7 @@ const CreateUser = (values, { resetForm, setErrors }) => {
             users.value.push(response.data);
             $('#userFormModal').modal('hide');
             resetForm();
-
+            toastr.success("User created successfully")
         })
         .catch((error) => {
             if (error.response.data.errors) {
@@ -74,6 +76,7 @@ const UpdateUser = (values, { resetForm, setErrors }) => {
                 email: '',
             };
             resetForm();
+            toastr.success("User updated successfully")
         })
         .catch((error) => {
             if (error.response.data.errors) {
