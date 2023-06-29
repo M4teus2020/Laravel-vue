@@ -47,35 +47,46 @@ const EditUser = (user) => {
     $('#userFormModal').modal('show');
 }
 
-const CreateUser = (values) => {
+const CreateUser = (values, { resetForm, setErrors }) => {
     axios.post('/api/users', values)
         .then((response) => {
             users.value.push(response.data);
             $('#userFormModal').modal('hide');
-            form.value.resetForm();
+            resetForm();
+
+        })
+        .catch((error) => {
+            if (error.response.data.errors) {
+                setErrors(error.response.data.errors);
+            }
         })
 }
 
-const UpdateUser = (values) => {
+const UpdateUser = (values, { resetForm, setErrors }) => {
     axios.put('/api/users/' + formValues.value.id, values)
         .then((response) => {
             const index = users.value.findIndex(user => user.id == response.data.id);
             users.value[index] = response.data;
             $('#userFormModal').modal('hide');
+            formValues.value = {
+                id: '',
+                name: '',
+                email: '',
+            };
+            resetForm();
         })
         .catch((error) => {
-            console.log(error);
+            if (error.response.data.errors) {
+                setErrors(error.response.data.errors);
+            }
         })
-        .finally(() => {
-            form.value.resetForm();
-        });
 }
 
-const handlerSubmit = (values) => {
+const handlerSubmit = (values, actions) => {
     if (editing.value) {
-        UpdateUser(values);
+        UpdateUser(values, actions);
     } else {
-        CreateUser(values);
+        CreateUser(values, actions);
     }
 }
 
@@ -164,7 +175,7 @@ onMounted(() => {
                         <div class="form-group">
                             <label for="email">Email</label>
                             <Field name="email" type="email" class="form-control" :class="{ 'is-invalid': errors.email }"
-                                id="email" aria-describedby="nameHelp" placeholder="Enter full name" />
+                                id="email" aria-describedby="nameHelp" placeholder="Enter email" />
                             <span class="invalid-feedback">{{ errors.email }}</span>
                         </div>
 
