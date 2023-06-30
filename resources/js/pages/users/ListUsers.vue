@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Form, Field } from 'vee-validate';
 import * as yup from 'yup';
 import { UseToastr } from '../../toastr.js';
+import { FormatDate } from '../../helper.js';
 
 const toastr = UseToastr();
 const users = ref([]);
@@ -159,7 +160,7 @@ onMounted(() => {
                                 <td>{{ user.id }}</td>
                                 <td>{{ user.name }}</td>
                                 <td>{{ user.email }}</td>
-                                <td>{{ user.created_at }}</td>
+                                <td>{{ FormatDate(user.created_at) }}</td>
                                 <td>-</td>
                                 <td>
                                     <a href="#" @click.prevent="EditUser(user)"><i class="fa fa-edit"></i></a>
