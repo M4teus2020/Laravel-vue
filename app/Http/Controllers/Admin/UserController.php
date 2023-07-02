@@ -33,7 +33,7 @@ class UserController extends Controller
         request()->validate([
             'name' => 'required',
             'email' => 'required|unique:users,email,'.$user->id,
-            'password' => 'required|min:8'
+            'password' => 'sometimes|required|min:8'
         ]);
 
         $user->update([

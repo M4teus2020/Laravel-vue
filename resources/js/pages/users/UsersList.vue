@@ -1,18 +1,17 @@
 <script setup>
 
-import { reactive, ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { Form, Field } from 'vee-validate';
 import * as yup from 'yup';
 import { UseToastr } from '../../toastr.js';
-import { FormatDate } from '../../helper.js';
+import UsersListItem from './UserListItem.vue'
 
 const toastr = UseToastr();
 const users = ref([]);
 const editing = ref(false);
 const formValues = ref();
 const form = ref(null);
-const userIdDelete = ref(null);
 
 const CreateUserSchema = yup.object({
     name: yup.string().required(),
@@ -51,6 +50,14 @@ const EditUser = (user) => {
     $('#userFormModal').modal('show');
 }
 
+const handlerSubmit = (values, actions) => {
+    if (editing.value) {
+        UpdateUser(values, actions);
+    } else {
+        CreateUser(values, actions);
+    }
+}
+
 const CreateUser = (values, { resetForm, setErrors }) => {
     axios.post('/api/users', values)
         .then((response) => {
@@ -87,31 +94,8 @@ const UpdateUser = (values, { resetForm, setErrors }) => {
         })
 }
 
-const handlerSubmit = (values, actions) => {
-    if (editing.value) {
-        UpdateUser(values, actions);
-    } else {
-        CreateUser(values, actions);
-    }
-}
-
-const ConfirmDeleteUser = (user) => {
-    userIdDelete.value = user.id;
-    $('#deleteUserModal').modal('show');
-}
-
-const DeleteUser = () => {
-    axios.delete('/api/users/' + userIdDelete.value)
-          .then((response) => {
-                users.value = users.value.filter(user => user.id !== userIdDelete.value);
-                $('#deleteUserModal').modal('hide');
-                toastr.success("User deleted successfully")
-            })
-          .catch((error) => {
-                if (error.response.data.errors) {
-                    toastr.error(error.response.data.errors);
-                }
-            })
+const UserDeleted = (userId) => {
+    users.value = users.value.filter(user => user.id !== userId);
 }
 
 onMounted(() => {
@@ -156,17 +140,11 @@ onMounted(() => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="user in users" :key="user.id">
-                                <td>{{ user.id }}</td>
-                                <td>{{ user.name }}</td>
-                                <td>{{ user.email }}</td>
-                                <td>{{ FormatDate(user.created_at) }}</td>
-                                <td>{{ user.role }}</td>
-                                <td>
-                                    <a href="#" @click.prevent="EditUser(user)"><i class="fa fa-edit"></i></a>
-                                    <a href="#" @click.prevent="ConfirmDeleteUser(user)"><i class="fa fa-trash text-danger ml-2"></i></a>
-                                </td>
-                            </tr>
+                            <UsersListItem v-for="user in users" 
+                            :user=user 
+                            :key="user.id" 
+                            @edit-user="EditUser" 
+                            @user-deleted="UserDeleted"/>
                         </tbody>
                     </table>
                 </div>
@@ -242,4 +220,6 @@ onMounted(() => {
             </div>
         </div>
     </div>
+
+    
 </template>
