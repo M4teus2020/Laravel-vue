@@ -7,9 +7,10 @@ import * as yup from 'yup';
 import { UseToastr } from '../../toastr.js';
 import UsersListItem from './UserListItem.vue';
 import { debounce } from 'lodash';
+import { Bootstrap4Pagination } from 'laravel-vue-pagination';
 
 const toastr = UseToastr();
-const users = ref([]);
+const users = ref({'data': []});
 const editing = ref(false);
 const formValues = ref();
 const form = ref(null);
@@ -29,8 +30,8 @@ const EditUserSchema = yup.object({
     })
 })
 
-const GetUsers = () => {
-    axios.get('/api/users')
+const GetUsers = (page = 1) => {
+    axios.get(`/api/users?page=${page}`)
         .then((response) => {
             users.value = response.data;
         })
@@ -106,12 +107,12 @@ const Search = () => {
             query: searchQuery.value
         }
     })
-    .then((response) => {
-        users.value = response.data;
-    })
-    .catch((error) => {
-        console.log(error);
-    })
+        .then((response) => {
+            users.value = response.data;
+        })
+        .catch((error) => {
+            console.log(error);
+        })
 }
 
 watch(searchQuery, debounce(() => {
@@ -164,12 +165,9 @@ onMounted(() => {
                                 <th>Options</th>
                             </tr>
                         </thead>
-                        <tbody v-if="users.length > 0">
-                            <UsersListItem v-for="user in users" 
-                            :user=user 
-                            :key="user.id" 
-                            @edit-user="EditUser" 
-                            @user-deleted="UserDeleted"/>
+                        <tbody v-if="users.data.length > 0">
+                            <UsersListItem v-for="user in users.data" :user=user :key="user.id" @edit-user="EditUser"
+                                @user-deleted="UserDeleted" />
                         </tbody>
                         <tbody v-else>
                             <tr>
@@ -179,7 +177,7 @@ onMounted(() => {
                     </table>
                 </div>
             </div>
-
+            <Bootstrap4Pagination :data="users" @pagination-change-page="GetUsers" />
         </div>
     </div>
 
@@ -250,6 +248,4 @@ onMounted(() => {
             </div>
         </div>
     </div>
-
-    
 </template>
