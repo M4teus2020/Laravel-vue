@@ -2,6 +2,7 @@
 import { FormatDate } from '../../helper.js';
 import { ref } from 'vue';
 import { UseToastr } from '../../toastr.js';
+import axios from 'axios';
 const toastr = UseToastr();
 
 defineProps({
@@ -10,6 +11,16 @@ defineProps({
 
 const emit = defineEmits(['UserDeleted', 'EditUser'])
 const userIdDelete = ref(null);
+const roles = ref([
+    {
+        name: 'ADMIN',
+        value: 1,
+    },
+    {
+        name: 'USER',
+        value: 2,
+    }
+])
 
 const ConfirmDeleteUser = (user) => {
     userIdDelete.value = user.id;
@@ -30,8 +41,13 @@ const DeleteUser = () => {
             })
 }
 
-const EditUser = (user) => {
-    emit('EditUser', user);
+const ChangeRole = (user, role) => {
+    axios.patch(`/api/users/${user.id}/change-role`, {
+        role: role
+    })
+        .then((response) => {
+            toastr.success("User role changed successfully")
+        })
 }
 
 </script>
@@ -42,9 +58,13 @@ const EditUser = (user) => {
         <td>{{ user.name }}</td>
         <td>{{ user.email }}</td>
         <td>{{ FormatDate(user.created_at) }}</td>
-        <td>{{ user.role }}</td>
         <td>
-            <a href="#" @click.prevent="EditUser(user)"><i class="fa fa-edit"></i></a>
+            <select class="form-control" @change="ChangeRole(user, $event.target.value)">
+                <option v-for="role in roles" :value="role.value" :selected="user.role === role.name">{{ role.name }}</option>
+            </select>
+        </td>
+        <td>
+            <a href="#" @click.prevent="$emit('EditUser', user);"><i class="fa fa-edit"></i></a>
             <a href="#" @click.prevent="ConfirmDeleteUser(user)"><i class="fa fa-trash text-danger ml-2"></i></a>
         </td>
     </tr>
