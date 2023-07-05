@@ -10,7 +10,7 @@ import { debounce } from 'lodash';
 import { Bootstrap4Pagination } from 'laravel-vue-pagination';
 
 const toastr = UseToastr();
-const users = ref({'data': []});
+const users = ref({ 'data': [] });
 const editing = ref(false);
 const formValues = ref();
 const form = ref(null);
@@ -64,13 +64,13 @@ const handlerSubmit = (values, actions) => {
 const CreateUser = (values, { resetForm, setErrors }) => {
     axios.post('/api/users', values)
         .then((response) => {
-            users.value.push(response.data);
+            users.value.data.push(response.data);
             $('#userFormModal').modal('hide');
             resetForm();
             toastr.success("User created successfully")
         })
         .catch((error) => {
-            if (error.response.data.errors) {
+            if (error) {
                 setErrors(error.response.data.errors);
             }
         })
@@ -79,8 +79,8 @@ const CreateUser = (values, { resetForm, setErrors }) => {
 const UpdateUser = (values, { resetForm, setErrors }) => {
     axios.put('/api/users/' + formValues.value.id, values)
         .then((response) => {
-            const index = users.value.findIndex(user => user.id == response.data.id);
-            users.value[index] = response.data;
+            const index = users.value.data.findIndex(user => user.id == response.data.id);
+            users.value.data[index] = response.data;
             $('#userFormModal').modal('hide');
             formValues.value = {
                 id: '',
@@ -91,14 +91,14 @@ const UpdateUser = (values, { resetForm, setErrors }) => {
             toastr.success("User updated successfully")
         })
         .catch((error) => {
-            if (error.response.data.errors) {
+            if (error) {
                 setErrors(error.response.data.errors);
             }
         })
 }
 
 const UserDeleted = (userId) => {
-    users.value = users.value.filter(user => user.id !== userId);
+    users.value.data = users.value.data.filter(user => user.id !== userId);
 }
 
 const Search = () => {
@@ -113,6 +113,44 @@ const Search = () => {
         .catch((error) => {
             console.log(error);
         })
+}
+
+const selectedUsers = ref([]);
+const ToggleSelection = (user) => {
+    const index = selectedUsers.value.indexOf(user.id);
+    if (index > -1) {
+        selectedUsers.value.splice(index, 1);
+    } else {
+        selectedUsers.value.push(user.id);
+    }
+}
+
+const BulkDelete = () => {
+    axios.delete('/api/users', {
+        data: {
+            ids: selectedUsers.value
+        }
+    })
+        .then((response) => {
+            users.value.data = users.value.data.filter(user => !selectedUsers.value.includes(user.id));
+            selectedUsers.value = [];
+            selectAll.value = false;
+            toastr.success(response.data.mensage)
+        })
+        .catch((error) => {
+            if (error.response.data.errors) {
+                toastr.error(error.response.data.errors);
+            }
+        })
+}
+
+const selectAll = ref(false);
+const SelectAllUsers = () => {
+    if (selectAll.value) {
+        selectedUsers.value = users.value.data.map(user => user.id);
+    } else {
+        selectedUsers.value = [];
+    }
 }
 
 watch(searchQuery, debounce(() => {
@@ -145,9 +183,15 @@ onMounted(() => {
     <div class="content">
         <div class="container-fluid">
             <div class="d-flex justify-content-between">
-                <button @click.prevent="AddUser()" type="button" class="mb-2 btn btn-primary">
-                    Add New User
-                </button>
+                <div>
+                    <button @click="AddUser()" type="button" class="mb-2 btn btn-primary">
+                        Add New User
+                    </button>
+                    <button v-if="selectedUsers.length > 0" @click="BulkDelete()" type="button"
+                        class="ml-2 mb-2 btn btn-danger">
+                        Delete Selected
+                    </button>
+                </div>
                 <div>
                     <input v-model="searchQuery" type="text" class="form-control" placeholder="Search..." />
                 </div>
@@ -157,6 +201,7 @@ onMounted(() => {
                     <table class="table table-bordered">
                         <thead>
                             <tr>
+                                <th><input type="checkbox" @change="SelectAllUsers" v-model="selectAll" /></th>
                                 <th style="width: 10px;">#</th>
                                 <th>Name</th>
                                 <th>Email</th>
@@ -167,7 +212,7 @@ onMounted(() => {
                         </thead>
                         <tbody v-if="users.data.length > 0">
                             <UsersListItem v-for="user in users.data" :user=user :key="user.id" @edit-user="EditUser"
-                                @user-deleted="UserDeleted" />
+                                @user-deleted="UserDeleted" @toggle-selection="ToggleSelection" :select-all="selectAll" />
                         </tbody>
                         <tbody v-else>
                             <tr>

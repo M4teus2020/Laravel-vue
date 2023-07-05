@@ -5,11 +5,12 @@ import { UseToastr } from '../../toastr.js';
 import axios from 'axios';
 const toastr = UseToastr();
 
-defineProps({
+const props = defineProps({
     user: Object,
+    selectAll: Boolean
 })
 
-const emit = defineEmits(['UserDeleted', 'EditUser'])
+const emit = defineEmits(['UserDeleted', 'EditUser', 'ToggleSelection'])
 const userIdDelete = ref(null);
 const roles = ref([
     {
@@ -35,7 +36,7 @@ const DeleteUser = () => {
                 emit('UserDeleted', userIdDelete.value)
             })
           .catch((error) => {
-                if (error.response.data.errors) {
+                if (error) {
                     toastr.error(error.response.data.errors);
                 }
             })
@@ -50,10 +51,15 @@ const ChangeRole = (user, role) => {
         })
 }
 
+const ToggleSelection = () => {
+    emit('ToggleSelection', props.user)
+}
+
 </script>
 
 <template>
     <tr>
+        <td><input type="checkbox" @change="ToggleSelection" :checked="selectAll" /></td>
         <td>{{ user.id }}</td>
         <td>{{ user.name }}</td>
         <td>{{ user.email }}</td>
