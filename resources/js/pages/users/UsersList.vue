@@ -34,6 +34,8 @@ const GetUsers = (page = 1) => {
     axios.get(`/api/users?page=${page}`)
         .then((response) => {
             users.value = response.data;
+            selectedUsers.value = []
+            selectAll.value = false
         })
 }
 
@@ -111,7 +113,9 @@ const Search = () => {
             users.value = response.data;
         })
         .catch((error) => {
-            console.log(error);
+            if (error) {
+                setErrors(error.response.data.errors);
+            }
         })
 }
 
@@ -183,14 +187,19 @@ onMounted(() => {
     <div class="content">
         <div class="container-fluid">
             <div class="d-flex justify-content-between">
-                <div>
+                <div class="d-flex ">
                     <button @click="AddUser()" type="button" class="mb-2 btn btn-primary">
+                        <i class="fa fa-plus-circle"></i>
                         Add New User
                     </button>
-                    <button v-if="selectedUsers.length > 0" @click="BulkDelete()" type="button"
-                        class="ml-2 mb-2 btn btn-danger">
-                        Delete Selected
-                    </button>
+                    <div v-if="selectedUsers.length > 0">
+                        <button @click="BulkDelete()" type="button"
+                            class="ml-2 mb-2 btn btn-danger">
+                            <i class="fa fa-trash"></i>
+                            Delete Selected
+                        </button>
+                        <span class="ml-2">Selected {{ selectedUsers.length }} users</span>
+                    </div>
                 </div>
                 <div>
                     <input v-model="searchQuery" type="text" class="form-control" placeholder="Search..." />
