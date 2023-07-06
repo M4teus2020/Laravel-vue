@@ -1,3 +1,23 @@
+<script setup>
+import { ref, onMounted, watch } from 'vue';
+import axios from 'axios';
+import ListAppointmentItem from './ListAppointmentItem.vue';
+
+const appointments = ref({ 'data': [] });
+
+
+const GetAppointments = () => {
+    axios.get('/api/appointments/')
+        .then(response => {
+            appointments.value = response.data;
+        })
+}
+
+onMounted(() => {
+    GetAppointments()
+})
+
+</script>
 <template>
     <div class="content-header">
         <div class="container-fluid">
@@ -58,24 +78,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Mr. Martin Glover MD</td>
-                                        <td>2023-01-27</td>
-                                        <td>05:40 PM</td>
-                                        <td>
-                                            <span class="badge badge-success">closed</span>
-                                        </td>
-                                        <td>
-                                            <a href="">
-                                                <i class="fa fa-edit mr-2"></i>
-                                            </a>
-
-                                            <a href="">
-                                                <i class="fa fa-trash text-danger"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
+                                    <ListAppointmentItem v-for="appointment in appointments.data" :key="appointment.id" :appointment="appointment" />
                                 </tbody>
                             </table>
                         </div>
