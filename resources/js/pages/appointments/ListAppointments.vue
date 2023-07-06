@@ -1,14 +1,13 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import ListAppointmentItem from './ListAppointmentItem.vue';
 
-const appointmentStatus = {'scheduled' : 1, 'confirmed' : 2, 'cancelled' : 3}
+const selectedStatus = ref(null);
 const appointments = ref({ 'data': [] });
-
-const GetAppointments = (status) => {
+const GetAppointments = (status = null) => {
     const params = {};
-    if (status) 
+    if (status)
         params.status = status
 
     axios.get('/api/appointments/', {
@@ -16,10 +15,24 @@ const GetAppointments = (status) => {
     })
         .then(response => {
             appointments.value = response.data;
+            selectedStatus.value = status
         })
 }
 
+const appointmentStatus = ref([])
+const GetAppointmentsStatus = () => {
+    axios.get('/api/appointments-status')
+        .then(response => {
+            appointmentStatus.value = response.data;
+        })
+}
+
+const appointmentCount = computed(() => {
+    return appointmentStatus.value.map(status => status.count).reduce((acc, value) => acc + value, 0);
+})
+
 onMounted(() => {
+    GetAppointmentsStatus()
     GetAppointments()
 })
 
@@ -54,24 +67,16 @@ onMounted(() => {
                             </a>
                         </div>
                         <div class="btn-group">
-                            <button @click="GetAppointments()" type="button" class="btn btn-secondary">
+                            <button @click="GetAppointments()" type="button" class="btn"
+                                :class="[selectedStatus == null ? 'btn-secondary' : 'btn-default']">
                                 <span class="mr-1">All</span>
-                                <span class="badge badge-pill badge-info">1</span>
+                                <span class="badge badge-pill badge-info">{{ appointmentCount }}</span>
                             </button>
 
-                            <button @click="GetAppointments(appointmentStatus.scheduled)" type="button" class="btn btn-default">
-                                <span class="mr-1">Scheduled</span>
-                                <span class="badge badge-pill badge-primary">0</span>
-                            </button>
-
-                            <button @click="GetAppointments(appointmentStatus.confirmed)" type="button" class="btn btn-default">
-                                <span class="mr-1">Confirmed</span>
-                                <span class="badge badge-pill badge-success">1</span>
-                            </button>
-
-                            <button @click="GetAppointments(appointmentStatus.cancelled)" type="button" class="btn btn-default">
-                                <span class="mr-1">Cancelled</span>
-                                <span class="badge badge-pill badge-danger">1</span>
+                            <button v-for="status in appointmentStatus" @click="GetAppointments(status.value)" type="button"
+                                class="btn" :class="[selectedStatus === status.value ? 'btn-secondary' : 'btn-default']">
+                                <span class="mr-1">{{ status.name.toLowerCase() }}</span>
+                                <span class="badge badge-pill" :class="`badge-${status.color}`">{{ status.count }}</span>
                             </button>
                         </div>
                     </div>
@@ -89,7 +94,8 @@ onMounted(() => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <ListAppointmentItem v-for="appointment in appointments.data" :key="appointment.id" :appointment="appointment" />
+                                    <ListAppointmentItem v-for="appointment in appointments.data" :key="appointment.id"
+                                        :appointment="appointment" />
                                 </tbody>
                             </table>
                         </div>
