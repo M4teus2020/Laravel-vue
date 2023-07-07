@@ -10,11 +10,7 @@ import { debounce } from 'lodash';
 import { Bootstrap4Pagination } from 'laravel-vue-pagination';
 
 const toastr = UseToastr();
-const users = ref({ 'data': [] });
-const editing = ref(false);
-const formValues = ref();
 const form = ref(null);
-const searchQuery = ref(null);
 
 const CreateUserSchema = yup.object({
     name: yup.string().required(),
@@ -30,6 +26,7 @@ const EditUserSchema = yup.object({
     })
 })
 
+const users = ref({ 'data': [] });
 const GetUsers = (page = 1) => {
     axios.get(`/api/users?page=${page}`)
         .then((response) => {
@@ -39,11 +36,13 @@ const GetUsers = (page = 1) => {
         })
 }
 
+const editing = ref(false);
 const AddUser = () => {
     editing.value = false;
     $('#userFormModal').modal('show');
 }
 
+const formValues = ref();
 const EditUser = (user) => {
     editing.value = true;
     form.value.resetForm();
@@ -99,10 +98,7 @@ const UpdateUser = (values, { resetForm, setErrors }) => {
         })
 }
 
-const UserDeleted = (userId) => {
-    users.value.data = users.value.data.filter(user => user.id !== userId);
-}
-
+const searchQuery = ref(null);
 const Search = () => {
     axios.get('/api/users/search', {
         params: {
@@ -155,6 +151,27 @@ const SelectAllUsers = () => {
     } else {
         selectedUsers.value = [];
     }
+}
+
+const userIdDelete = ref(null);
+const ConfirmDeleteUser = (user) => {
+    userIdDelete.value = user.id;
+    $('#deleteUserModal').modal('show');
+}
+
+const DeleteUser = () => {
+    axios.delete('/api/users/' + userIdDelete.value)
+          .then((response) => {
+                $('#deleteUserModal').modal('hide');
+                toastr.success("User deleted successfully")
+                users.value.data = users.value.data.filter(user => user.id !== userIdDelete.value);
+                userIdDelete.value = null;
+            })
+          .catch((error) => {
+                if (error) {
+                    toastr.error(error.response.data.errors);
+                }
+            })
 }
 
 watch(searchQuery, debounce(() => {
@@ -220,8 +237,8 @@ onMounted(() => {
                             </tr>
                         </thead>
                         <tbody v-if="users.data.length > 0">
-                            <UsersListItem v-for="user in users.data" :user=user :key="user.id" @edit-user="EditUser"
-                                @user-deleted="UserDeleted" @toggle-selection="ToggleSelection" :select-all="selectAll" />
+                            <UsersListItem v-for="user in users.data" :user=user :key="user.id" :select-all="selectAll"
+                            @edit-user="EditUser" @confirm-delete-user="ConfirmDeleteUser" @toggle-selection="ToggleSelection"   />
                         </tbody>
                         <tbody v-else>
                             <tr>
