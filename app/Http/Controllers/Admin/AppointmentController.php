@@ -30,4 +30,17 @@ class AppointmentController extends Controller
 
         return $appointments;
     }
+
+    public function store() {
+        Appointment::create([
+            'title' => request('title'),
+            'client_id' => request('client_id'),
+            'start_time' => now(),
+            'end_time' => now(),
+            'description' => request('description'),
+            'status' => AppointmentStatus::SCHEDULED
+        ]);
+
+        return response()->json(['mensage' => 'success']);
+    }
 }

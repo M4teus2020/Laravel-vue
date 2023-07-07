@@ -46,7 +46,9 @@ onMounted(() => {
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="#">Admin</a></li>
+                        <li class="breadcrumb-item">
+                            <router-link to="/admin/dashboard">Home</router-link>
+                        </li>
                         <li class="breadcrumb-item active">Appointments</li>
                     </ol>
                 </div>
@@ -61,10 +63,11 @@ onMounted(() => {
                 <div class="col-lg-12">
                     <div class="d-flex justify-content-between mb-2">
                         <div>
-                            <a href="">
-                                <button class="btn btn-primary"><i class="fa fa-plus-circle mr-1"></i> Add New
-                                    Appointment</button>
-                            </a>
+                            <router-link to="/admin/appointments/create">
+                                <button class="btn btn-primary">
+                                    <i class="fa fa-plus-circle mr-1"></i> Add New Appointment
+                                </button>
+                            </router-link>
                         </div>
                         <div class="btn-group">
                             <button @click="GetAppointments()" type="button" class="btn"
