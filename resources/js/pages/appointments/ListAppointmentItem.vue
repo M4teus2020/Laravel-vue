@@ -1,5 +1,6 @@
 <script setup>
 
+const emit = defineEmits(['ConfirmDeleteAppointment'])
 const props = defineProps({
     appointment: Object
 })
@@ -19,7 +20,7 @@ const props = defineProps({
                 <i class="fa fa-edit mr-2"></i>
             </router-link>
 
-            <a href="">
+            <a href="" @click.prevent="$emit('ConfirmDeleteAppointment', appointment.id)">
                 <i class="fa fa-trash text-danger"></i>
             </a>
         </td>

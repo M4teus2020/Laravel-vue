@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import ListAppointmentItem from './ListAppointmentItem.vue';
+import Swal from 'sweetalert2';
 
 const selectedStatus = ref(null);
 const appointments = ref({ 'data': [] });
@@ -29,6 +30,26 @@ const GetAppointmentsStatus = () => {
 
 const appointmentCount = computed(() => {
     return appointmentStatus.value.map(status => status.count).reduce((acc, value) => acc + value, 0);
+})
+
+const ConfirmDeleteAppointment = (id => {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            axios.delete(`/api/appointments/${id}`)
+                .then(response => {
+                    appointments.value.data = appointments.value.data.filter(appointment => appointment.id !== id)
+                    Swal.fire('Deleted!', 'The Appointment has been deleted.', 'success')
+                })
+        }
+    })
 })
 
 onMounted(() => {
@@ -98,7 +119,7 @@ onMounted(() => {
                                 </thead>
                                 <tbody>
                                     <ListAppointmentItem v-for="appointment in appointments.data" :key="appointment.id"
-                                        :appointment="appointment" />
+                                        :appointment="appointment" @confirm-delete-appointment="ConfirmDeleteAppointment" />
                                 </tbody>
                             </table>
                         </div>

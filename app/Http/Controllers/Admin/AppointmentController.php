@@ -73,4 +73,10 @@ class AppointmentController extends Controller
 
         return response()->json(['mensage' => 'success']);
     }
+
+    public function destroy(Appointment $appointment) {
+        $appointment->delete();
+
+        return response()->json(['mensage' => 'success'], 200);
+    }
 }
