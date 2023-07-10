@@ -1,7 +1,7 @@
 <script setup>
 import axios from "axios";
 import { ref, onMounted, reactive } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { UseToastr } from "../../toastr";
 import { Form } from "vee-validate";
 import flatpickr from "flatpickr";
@@ -9,6 +9,7 @@ import 'flatpickr/dist/themes/light.css';
 
 const toastr = UseToastr()
 const router = useRouter()
+const route = useRoute()
 const form = reactive({
     title: '',
     client_id: '',
@@ -18,13 +19,31 @@ const form = reactive({
 })
 
 const handleSubmit = (values, actions) => {
+    if (editMode) {
+        EditAppointment(values, actions);
+    } else {
+        CreateAppointment(values, actions);
+    }
+}
+
+const CreateAppointment = (values, actions) => {
     axios.post('/api/appointments/create', form)
         .then(res => {
             router.push('/admin/appointments')
             toastr.success('Appointment created successfully!')
         })
         .catch(error => {
-            console.log(error)
+            actions.setErrors(error.response.data.errors);
+        })
+}
+
+const EditAppointment = (values, actions) => {
+    axios.put(`/api/appointments/${route.params.id}/edit`, form)
+        .then(res => {
+            router.push('/admin/appointments')
+            toastr.success('Appointment updated successfully!')
+        })
+        .catch(error => {
             actions.setErrors(error.response.data.errors);
         })
 }
@@ -35,11 +54,23 @@ const GetClients = () => {
         .then((response) => {
             clients.value = response.data;
         })
+}
+
+const GetAppointment = () => {
+    axios.get(`/api/appointments/${route.params.id}/edit`)
+        .then(({data}) => {
+            form.title = data.title
+            form.client_id = data.client_id
+            form.end_time = data.formatted_end_time
+            form.start_time = data.formatted_start_time
+            form.description = data.description
+        })
         .catch((error) => {
             console.log(error);
         });
 }
 
+const editMode = ref(false)
 onMounted(() => {
     GetClients();
     flatpickr(".flatpickr", {
@@ -47,6 +78,11 @@ onMounted(() => {
         dateFormat: "Y-m-d h:i K",
         defaultHour: 10,
     })
+
+    if (route.name === "admin.appointments.edit") {
+        editMode.value = true;
+        GetAppointment();
+    }
 })
 
 </script>
@@ -55,7 +91,11 @@ onMounted(() => {
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Create Appointment</h1>
+                    <h1 class="m-0">
+                        <span v-if="editMode">Edit</span>
+                        <span v-else>Create</span>
+                        Appointment
+                    </h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -65,7 +105,10 @@ onMounted(() => {
                         <li class="breadcrumb-item">
                             <router-link to="/admin/appointments">Appointments</router-link>
                         </li>
-                        <li class="breadcrumb-item active">Create</li>
+                        <li class="breadcrumb-item active">
+                            <span v-if="editMode">Edit</span>
+                            <span v-else>Create</span>
+                        </li>
                     </ol>
                 </div>
             </div>
@@ -91,7 +134,8 @@ onMounted(() => {
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="client">Client Name</label>
-                                            <select v-model="form.client_id" id="client" :class="{ 'is-invalid': errors.client_id }" class="form-control">
+                                            <select v-model="form.client_id" id="client"
+                                                :class="{ 'is-invalid': errors.client_id }" class="form-control">
                                                 <option value="" disabled selected>Select a Client: </option>
                                                 <option v-for="client in clients" :value="client.id">{{ client.full_name }}
                                                 </option>
@@ -105,7 +149,8 @@ onMounted(() => {
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="start-time">Start Time</label>
-                                            <input v-model="form.start_time" type="date" :class="{ 'is-invalid': errors.start_time }" class="form-control flatpickr"
+                                            <input v-model="form.start_time" type="date"
+                                                :class="{ 'is-invalid': errors.start_time }" class="form-control flatpickr"
                                                 id="start-time">
                                             <span class="invalid-feedback">{{ errors.start_time }}</span>
                                         </div>
@@ -113,7 +158,8 @@ onMounted(() => {
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="end-time">End Time</label>
-                                            <input v-model="form.end_time" type="date" :class="{ 'is-invalid': errors.end_time }" class="form-control flatpickr"
+                                            <input v-model="form.end_time" type="date"
+                                                :class="{ 'is-invalid': errors.end_time }" class="form-control flatpickr"
                                                 id="end-time">
                                             <span class="invalid-feedback">{{ errors.end_time }}</span>
                                         </div>
@@ -121,7 +167,7 @@ onMounted(() => {
                                 </div>
                                 <div class="form-group">
                                     <label for="description">Description</label>
-                                    <textarea v-model="form.description" :class="{ 'is-invalid': errors.title }"
+                                    <textarea v-model="form.description" :class="{ 'is-invalid': errors.description }"
                                         class="form-control" id="description" rows="3"
                                         placeholder="Enter Description"></textarea>
                                     <span class="invalid-feedback">{{ errors.description }}</span>
@@ -133,5 +179,4 @@ onMounted(() => {
                 </div>
             </div>
         </div>
-    </div>
-</template>
+</div></template>

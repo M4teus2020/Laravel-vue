@@ -15,9 +15,9 @@ const props = defineProps({
             <span class="badge" :class="`badge-${appointment.status.color}`">{{ appointment.status.name.toLowerCase() }}</span>
         </td>
         <td>
-            <a href="">
+            <router-link :to="`appointments/${appointment.id}/edit`">
                 <i class="fa fa-edit mr-2"></i>
-            </a>
+            </router-link>
 
             <a href="">
                 <i class="fa fa-trash text-danger"></i>
