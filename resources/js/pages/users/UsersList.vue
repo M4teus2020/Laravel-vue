@@ -26,9 +26,14 @@ const EditUserSchema = yup.object({
     })
 })
 
+const searchQuery = ref(null);
 const users = ref({ 'data': [] });
 const GetUsers = (page = 1) => {
-    axios.get(`/api/users?page=${page}`)
+    axios.get(`/api/users?page=${page}`, {
+            params: {
+                query: searchQuery.value
+            }
+        })
         .then((response) => {
             users.value = response.data;
             selectedUsers.value = []
@@ -98,23 +103,6 @@ const UpdateUser = (values, { resetForm, setErrors }) => {
         })
 }
 
-const searchQuery = ref(null);
-const Search = () => {
-    axios.get('/api/users/search', {
-        params: {
-            query: searchQuery.value
-        }
-    })
-        .then((response) => {
-            users.value = response.data;
-        })
-        .catch((error) => {
-            if (error) {
-                setErrors(error.response.data.errors);
-            }
-        })
-}
-
 const selectedUsers = ref([]);
 const ToggleSelection = (user) => {
     const index = selectedUsers.value.indexOf(user.id);
@@ -161,21 +149,21 @@ const ConfirmDeleteUser = (user) => {
 
 const DeleteUser = () => {
     axios.delete('/api/users/' + userIdDelete.value)
-          .then((response) => {
-                $('#deleteUserModal').modal('hide');
-                toastr.success("User deleted successfully")
-                users.value.data = users.value.data.filter(user => user.id !== userIdDelete.value);
-                userIdDelete.value = null;
-            })
-          .catch((error) => {
-                if (error) {
-                    toastr.error(error.response.data.errors);
-                }
-            })
+        .then((response) => {
+            $('#deleteUserModal').modal('hide');
+            toastr.success("User deleted successfully")
+            users.value.data = users.value.data.filter(user => user.id !== userIdDelete.value);
+            userIdDelete.value = null;
+        })
+        .catch((error) => {
+            if (error) {
+                toastr.error(error.response.data.errors);
+            }
+        })
 }
 
 watch(searchQuery, debounce(() => {
-    Search()
+    GetUsers()
 }, 300))
 
 onMounted(() => {
@@ -210,8 +198,7 @@ onMounted(() => {
                         Add New User
                     </button>
                     <div v-if="selectedUsers.length > 0">
-                        <button @click="BulkDelete()" type="button"
-                            class="ml-2 mb-2 btn btn-danger">
+                        <button @click="BulkDelete()" type="button" class="ml-2 mb-2 btn btn-danger">
                             <i class="fa fa-trash"></i>
                             Delete Selected
                         </button>
@@ -238,7 +225,8 @@ onMounted(() => {
                         </thead>
                         <tbody v-if="users.data.length > 0">
                             <UsersListItem v-for="user in users.data" :user=user :key="user.id" :select-all="selectAll"
-                            @edit-user="EditUser" @confirm-delete-user="ConfirmDeleteUser" @toggle-selection="ToggleSelection"   />
+                                @edit-user="EditUser" @confirm-delete-user="ConfirmDeleteUser"
+                                @toggle-selection="ToggleSelection" />
                         </tbody>
                         <tbody v-else>
                             <tr>

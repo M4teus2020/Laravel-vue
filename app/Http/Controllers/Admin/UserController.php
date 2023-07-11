@@ -10,9 +10,14 @@ class UserController extends Controller
 {
     
     public function index() {
-        $users = User::paginate();
+        $searchQuery = request('query');
+        $users = User::query()
+            ->when(request('query'), function ($query, $searchQuery) {
+                return $query->where('name', 'like', '%'. $searchQuery. '%');
+            })
+            ->paginate();
 
-        return $users;
+        return response()->json($users);
     }
 
     public function store() {
@@ -55,12 +60,6 @@ class UserController extends Controller
             'role' => request('role')
         ]);
         return response()->json(['success' => true]);
-    }
-
-    public function search() {
-        $searchQuery = request('query');
-        $users = User::where('name', 'like', "%{$searchQuery}%")->paginate();
-        return response()->json($users);
     }
 
     public function bulkDelete() {
