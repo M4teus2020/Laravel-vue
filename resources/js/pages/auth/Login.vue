@@ -1,21 +1,28 @@
 <script setup>
 import axios from 'axios';
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 
 const form = reactive({
     email: '',
     password: ''
 })
 
+const loading = ref(false);
+const errorMessage = ref('');
 const handlerSubmit = () => {
+    loading.value = true
+    errorMessage.value = '';
     axios.post('/login', form)
         .then(success => {
-            console.log(success);
             window.location.href = '/admin/dashboard';
         })
         .catch(error => {
-            console.log(error);
-        });
+            errorMessage.value = error.response.data.message
+        })
+        .finally(() => {
+            loading.value = false
+        })
+
 }
 </script>
 <template>
@@ -27,6 +34,9 @@ const handlerSubmit = () => {
             </div>
             <div class="card-body">
                 <p class="login-box-msg">Sign in to start your session</p>
+                <div v-if="errorMessage" class="alert alert-danger" role="alert">
+                    {{ errorMessage }}
+                </div>
                 <form @submit.prevent="handlerSubmit">
                     <div class="input-group mb-3">
                         <input v-model="form.email" type="email" class="form-control" placeholder="Email">
@@ -55,7 +65,10 @@ const handlerSubmit = () => {
                         </div>
 
                         <div class="col-4">
-                            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                            <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
+                                <div v-if="loading" class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                <span>Sign In</span>
+                            </button>
                         </div>
 
                     </div>
